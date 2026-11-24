@@ -1,0 +1,41 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build:
+    runs-on: linux-amd64
+    timeout-minutes: 20
+    container:
+      image: docker.io/library/node:24-bookworm@sha256:6b33b0be1647d1a577f9cebb6c8fc2587cc02c98c9956af8d0289df1791a3d10
+    env:
+      MISE_ENV: ci
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+
+    steps:
+      - name: Checkout repository
+        uses: https://code.forgejo.org/actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install tools
+        uses: https://github.com/jdx/mise-action@08ae2a091c038e1e05ec6f5115dc5c69d5a2a6b8 # v5.1.2
+        env:
+          MISE_GITHUB_TOKEN: ${{ secrets.MISE_TOKEN }}
+
+      - name: Build
+        run: dotnet publish Jellyfin.Plugin.TimeIsUp/Jellyfin.Plugin.TimeIsUp.csproj -c Release -o artifacts
+
+      # A dry-run batch parses every pending fragment, so a broken one fails
+      # here instead of in the release.
+      - name: Pending release notes
+        run: |
+          set -eu
+          if ! ls .changes/unreleased/*.yaml >/dev/null 2>&1; then
+            echo "::notice::No release notes pending in .changes/unreleased."
+            exit 0
+          fi
+          changie batch auto --dry-run

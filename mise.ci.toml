@@ -1,0 +1,6 @@
+# CI only (MISE_ENV=ci). Locally the plugin builds in the .NET SDK container,
+# so nothing here gets installed on a workstation.
+[tools]
+dotnet = "10.0.404"
+jq = "1.8.2"
+yq = "4.54.3"

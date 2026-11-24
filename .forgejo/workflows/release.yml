@@ -1,0 +1,125 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Which part of the version to increase
+        required: true
+        default: auto
+        type: choice
+        options:
+          - auto
+          - patch
+          - minor
+          - major
+
+jobs:
+  release:
+    runs-on: linux-amd64
+    timeout-minutes: 30
+    if: forgejo.ref == 'refs/heads/main'
+    container:
+      image: docker.io/library/node:24-bookworm@sha256:6b33b0be1647d1a577f9cebb6c8fc2587cc02c98c9956af8d0289df1791a3d10
+    env:
+      MISE_ENV: ci
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+      TZ: Asia/Tokyo
+
+    steps:
+      - name: Checkout repository
+        uses: https://code.forgejo.org/actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      # Fail before anything is pushed: the release is published only after
+      # the commit and tag are, so a missing token would leave a tag without
+      # a release and a manifest entry pointing at nothing.
+      - name: Check the release token
+        env:
+          TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+        run: |
+          set -eu
+          if [ -z "$TOKEN" ]; then
+            echo "The FORGEJO_TOKEN secret is not set" >&2
+            exit 1
+          fi
+          curl -sS --fail-with-body -o /dev/null --header "Authorization: token $TOKEN" \
+            "${GITHUB_SERVER_URL}/api/v1/repos/${GITHUB_REPOSITORY}"
+
+      - name: Install tools
+        uses: https://github.com/jdx/mise-action@08ae2a091c038e1e05ec6f5115dc5c69d5a2a6b8 # v5.1.2
+        env:
+          MISE_GITHUB_TOKEN: ${{ secrets.MISE_TOKEN }}
+
+      - name: Compute the next version
+        id: next
+        env:
+          BUMP: ${{ inputs.bump }}
+        run: |
+          set -eu
+          current=$(sed -n 's|.*<Version>\(.*\)\.0</Version>.*|\1|p' Directory.Build.props)
+          # changie computes the next version from its newest .changes/v*.md
+          # (v0.0.0 before the first release), so the two must agree or the
+          # release would skip or repeat one.
+          latest=$(changie latest --remove-prefix)
+          if [ "$latest" != "$current" ]; then
+            echo "changie latest is $latest but Directory.Build.props says $current; they must match before releasing." >&2
+            exit 1
+          fi
+          case "$BUMP" in
+            auto|major|minor|patch) ;;
+            *) echo "Unknown bump: $BUMP" >&2; exit 1 ;;
+          esac
+          if [ "$BUMP" = auto ] && ! ls .changes/unreleased/*.yaml >/dev/null 2>&1; then
+            echo "No release notes pending in .changes/unreleased: add notes with 'changie new', or dispatch an explicit patch/minor/major bump." >&2
+            exit 1
+          fi
+          next=$(changie next "$BUMP")
+          if git rev-parse "$next" >/dev/null 2>&1; then
+            echo "Tag $next already exists" >&2
+            exit 1
+          fi
+          echo "tag=$next" >> "$FORGEJO_OUTPUT"
+          echo "Releasing $next (was v$current, $BUMP)"
+
+      # batch writes .changes/vX.Y.Z.md and deletes the fragments; merge
+      # rebuilds CHANGELOG.md and applies the replacements in .changie.yaml
+      # that set the version in Directory.Build.props and build.yaml.
+      - name: Batch the release notes
+        env:
+          BUMP: ${{ inputs.bump }}
+          TAG: ${{ steps.next.outputs.tag }}
+        run: |
+          set -eu
+          changie batch "$BUMP"
+          changie merge
+          if ! grep -q "<Version>${TAG#v}.0</Version>" Directory.Build.props; then
+            echo "Directory.Build.props was not bumped to ${TAG#v}.0" >&2
+            exit 1
+          fi
+
+      - name: Build
+        run: dotnet publish Jellyfin.Plugin.TimeIsUp/Jellyfin.Plugin.TimeIsUp.csproj -c Release -o artifacts
+
+      - name: Package and add to the manifest
+        run: sh .forgejo/scripts/package.sh "${{ steps.next.outputs.tag }}" artifacts dist
+
+      - name: Commit and tag
+        env:
+          TAG: ${{ steps.next.outputs.tag }}
+        run: |
+          set -eu
+          git config user.name "timeisup[bot]"
+          git config user.email "noreply@code.hosaka.cc"
+          git add -A .changes CHANGELOG.md Directory.Build.props build.yaml manifest.json
+          git commit -m "chore(release): $TAG"
+          git tag -a "$TAG" -m "Time Is Up $TAG"
+          # Atomic, so a rejected tag cannot leave the branch bumped without one.
+          git push --atomic origin "HEAD:${{ forgejo.ref_name }}" "$TAG"
+
+      - name: Publish the Forgejo release
+        env:
+          TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+        run: sh .forgejo/scripts/publish-release.sh "${{ steps.next.outputs.tag }}" dist
