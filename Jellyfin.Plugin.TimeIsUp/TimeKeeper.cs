@@ -588,7 +588,12 @@ public sealed partial class TimeKeeper : BackgroundService
                 userName = char.ToUpperInvariant(userName[0]) + userName[1..];
             }
 
-            var message = new MessageCommand { Header = Config.MessageHeader, Text = Format(notice.Template, userName, notice.RemainingSeconds), TimeoutMs = 10000 };
+            var message = new MessageCommand
+            {
+                Header = Format(Config.MessageHeader, userName, notice.RemainingSeconds),
+                Text = Format(notice.Template, userName, notice.RemainingSeconds),
+                TimeoutMs = 10000
+            };
             await _sessionManager.SendMessageCommand(null, notice.Session.Id, message, CancellationToken.None).ConfigureAwait(false);
         }
 #pragma warning disable CA1031 // A client that can't be reached must not break anything else

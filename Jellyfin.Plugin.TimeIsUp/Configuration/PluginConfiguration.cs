@@ -46,7 +46,7 @@ public class PluginConfiguration : BasePluginConfiguration
     public bool ShowTimeLeftOnStart { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets the header of every message.
+    /// Gets or sets the header of every message. {minutes} and {username} are replaced like in the messages.
     /// </summary>
     public string MessageHeader { get; set; } = "Screen Time";
 
