@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Time Is Up</title>
+</head>
+<body>
+    <div id="TimeIsUpConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-select,emby-checkbox">
+        <style>
+            #TimeIsUpConfigPage [hidden] { display: none !important; }
+            #TimeIsUpConfigPage #TimeIsUpStatus { max-width: 54em; }
+            #TimeIsUpConfigPage .tiu-card { padding: 1em; margin-bottom: 1em; border-radius: .5em; background: rgba(128, 128, 128, .12); }
+            #TimeIsUpConfigPage .tiu-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1em; }
+            #TimeIsUpConfigPage .tiu-name { font-size: 1.3em; font-weight: 600; }
+            #TimeIsUpConfigPage .tiu-badge { font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+            #TimeIsUpConfigPage .tiu-bar { height: .6em; margin: .6em 0; border-radius: .3em; background: rgba(128, 128, 128, .3); overflow: hidden; }
+            #TimeIsUpConfigPage .tiu-fill { height: 100%; background: #00a4dc; }
+            #TimeIsUpConfigPage .tiu-Warning .tiu-fill { background: #e8a33d; }
+            #TimeIsUpConfigPage .tiu-Finishing .tiu-fill, #TimeIsUpConfigPage .tiu-TimeUp .tiu-fill { background: #cc3333; }
+            #TimeIsUpConfigPage .tiu-Party .tiu-fill { background: #aa5cc3; }
+            #TimeIsUpConfigPage .tiu-Warning .tiu-badge { color: #e8a33d; }
+            #TimeIsUpConfigPage .tiu-Finishing .tiu-badge, #TimeIsUpConfigPage .tiu-TimeUp .tiu-badge { color: #cc3333; }
+            #TimeIsUpConfigPage .tiu-Party .tiu-badge { color: #aa5cc3; }
+            #TimeIsUpConfigPage .tiu-line { opacity: .8; margin: .2em 0; }
+            #TimeIsUpConfigPage .tiu-buttons { display: flex; flex-wrap: wrap; gap: .5em; margin-top: .8em; }
+            #TimeIsUpConfigPage .tiu-buttons .emby-button { margin: 0; min-width: 4.5em; }
+            #TimeIsUpConfigPage .tiu-presets { flex-wrap: nowrap; gap: .4em; margin: .3em 0 .6em; }
+            #TimeIsUpConfigPage .tiu-presets .emby-button { flex: 1; min-width: 0; padding: .5em .2em; font-size: .9em; justify-content: center; text-align: center; }
+            #TimeIsUpConfigPage .tiu-user { margin-bottom: 1.2em; }
+            #TimeIsUpConfigPage .tiu-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .4em; margin-top: .3em; }
+            #TimeIsUpConfigPage .tiu-days label { display: flex; flex-direction: column; align-items: center; font-size: .9em; opacity: .9; }
+            #TimeIsUpConfigPage .tiu-days input { width: 100%; box-sizing: border-box; text-align: center; padding: .4em .1em; }
+        </style>
+        <div data-role="content">
+            <div class="content-primary">
+                <h2 class="sectionTitle">Today</h2>
+                <div id="TimeIsUpStatus"></div>
+                <p id="TimeIsUpNoUsers" class="fieldDescription" hidden>No user has a limit yet. Pick one under Daily limits.</p>
+
+                <form id="TimeIsUpConfigForm">
+                    <h2 class="sectionTitle">Settings</h2>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input id="Enabled" name="Enabled" type="checkbox" is="emby-checkbox" />
+                            <span>Enable limits</span>
+                        </label>
+                        <div class="fieldDescription checkboxFieldDescription">When off, watch time is still counted but nothing is stopped or refused.</div>
+                    </div>
+
+                    <h3 class="sectionTitle">Daily limits</h3>
+                    <p class="fieldDescription">Minutes of video per day. Only playing time counts, not pauses or music.</p>
+                    <div id="TimeIsUpUsers"></div>
+
+                    <h3 class="sectionTitle">When time runs out</h3>
+                    <div class="selectContainer">
+                        <label class="selectLabel" for="TimeUpBehavior">What's playing</label>
+                        <select is="emby-select" id="TimeUpBehavior" name="TimeUpBehavior" class="emby-select-withcolor emby-select">
+                            <option value="StopImmediately">Stop immediately</option>
+                            <option value="FinishCurrent">Finish what's playing</option>
+                            <option value="FinishWithGrace">Finish what's playing, up to a grace limit</option>
+                        </select>
+                    </div>
+                    <div class="inputContainer" id="GraceMinutesContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="GraceMinutes">Grace limit (minutes)</label>
+                        <input id="GraceMinutes" name="GraceMinutes" type="number" is="emby-input" min="0" max="600" />
+                        <div class="fieldDescription">Playing time allowed over the limit before it's stopped anyway.</div>
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="WarningMinutes">Warning (minutes before the end)</label>
+                        <input id="WarningMinutes" name="WarningMinutes" type="number" is="emby-input" min="0" max="120" />
+                        <div class="fieldDescription">0 turns the warning off.</div>
+                    </div>
+                    <div class="checkboxContainer">
+                        <label class="emby-checkbox-label">
+                            <input id="ShowTimeLeftOnStart" name="ShowTimeLeftOnStart" type="checkbox" is="emby-checkbox" />
+                            <span>Show the time left when playback starts</span>
+                        </label>
+                    </div>
+                    <div class="selectContainer">
+                        <label class="selectLabel" for="ResetHour">New day starts at</label>
+                        <select is="emby-select" id="ResetHour" name="ResetHour" class="emby-select-withcolor emby-select"></select>
+                    </div>
+
+                    <h3 class="sectionTitle">Messages</h3>
+                    <p class="fieldDescription">{minutes} is replaced with the time left, like "5 minutes" or "1 minute", and {username} with the user's name.</p>
+                    <div class="checkboxContainer">
+                        <label class="emby-checkbox-label">
+                            <input id="CapitalizeUserName" name="CapitalizeUserName" type="checkbox" is="emby-checkbox" />
+                            <span>Capitalize {username}</span>
+                        </label>
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="MessageHeader">Header</label>
+                        <input id="MessageHeader" name="MessageHeader" type="text" is="emby-input" />
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="WarningMessage">Warning</label>
+                        <input id="WarningMessage" name="WarningMessage" type="text" is="emby-input" />
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="FinishingMessage">Time is up, finishing what's playing</label>
+                        <input id="FinishingMessage" name="FinishingMessage" type="text" is="emby-input" />
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="TimeUpMessage">Time is up</label>
+                        <input id="TimeUpMessage" name="TimeUpMessage" type="text" is="emby-input" />
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="TimeLeftMessage">Time left, when playback starts</label>
+                        <input id="TimeLeftMessage" name="TimeLeftMessage" type="text" is="emby-input" />
+                    </div>
+
+                    <div>
+                        <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                            <span>Save</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <script type="text/javascript">
+            (function () {
+                const pluginId = 'e89fc9db-5c7a-4bae-8ada-194730c5e711';
+                const days = [[1, 'Mon'], [2, 'Tue'], [3, 'Wed'], [4, 'Thu'], [5, 'Fri'], [6, 'Sat'], [0, 'Sun']];
+                const defaultMinutes = 45;
+                const presets = [
+                    ['-30 min', (v) => v - 30],
+                    ['-15 min', (v) => v - 15],
+                    [defaultMinutes + ' min', () => defaultMinutes],
+                    ['+15 min', (v) => v + 15],
+                    ['+30 min', (v) => v + 30]
+                ];
+                const textFields = ['MessageHeader', 'WarningMessage', 'FinishingMessage', 'TimeUpMessage', 'TimeLeftMessage'];
+                const numberFields = ['GraceMinutes', 'WarningMinutes', 'ResetHour'];
+                const page = document.querySelector('#TimeIsUpConfigPage');
+                const $ = (selector) => page.querySelector(selector);
+                const norm = (id) => (id || '').replace(/-/g, '').toLowerCase();
+                let refreshTimer = null;
+
+                function el(tag, className, text) {
+                    const node = document.createElement(tag);
+                    if (className) node.className = className;
+                    if (text !== undefined) node.textContent = text;
+                    return node;
+                }
+
+                function badgeText(s) {
+                    const left = Math.ceil(s.RemainingSeconds / 60);
+                    switch (s.State) {
+                        case 'Party': return 'Party';
+                        case 'Finishing': return 'Finishing this one';
+                        case 'TimeUp': return 'Time is up';
+                        case 'Off': return 'Limits off';
+                        default: return left + ' min left';
+                    }
+                }
+
+                function card(s) {
+                    const total = (s.LimitMinutes + s.ExtraMinutes) * 60;
+                    const used = Math.floor(s.UsedSeconds / 60);
+                    const node = el('div', 'tiu-card tiu-' + s.State);
+
+                    const head = el('div', 'tiu-head');
+                    head.append(el('span', 'tiu-name', s.UserName), el('span', 'tiu-badge', badgeText(s)));
+                    node.append(head);
+
+                    const bar = el('div', 'tiu-bar');
+                    const fill = el('div', 'tiu-fill');
+                    fill.style.width = (s.Party ? 100 : Math.min(100, total > 0 ? (s.UsedSeconds / total) * 100 : 100)) + '%';
+                    bar.append(fill);
+                    node.append(bar);
+
+                    let watched = s.Party
+                        ? 'Watched ' + used + ' min, no limit today'
+                        : 'Watched ' + used + ' of ' + s.LimitMinutes + ' min';
+                    if (s.ExtraMinutes > 0 && !s.Party) watched += ' (+' + s.ExtraMinutes + ' extra)';
+                    node.append(el('div', 'tiu-line', watched));
+                    if (s.NowPlaying) {
+                        node.append(el('div', 'tiu-line', (s.IsPaused ? 'Paused: ' : 'Playing: ') + s.NowPlaying + (s.Device ? ' on ' + s.Device : '')));
+                    }
+
+                    const buttons = el('div', 'tiu-buttons');
+                    const button = (label, method, path) => {
+                        const b = el('button', 'raised emby-button', label);
+                        b.type = 'button';
+                        b.setAttribute('is', 'emby-button');
+                        b.addEventListener('click', () => {
+                            b.disabled = true;
+                            ApiClient.ajax({ type: method, url: ApiClient.getUrl('TimeIsUp/Users/' + s.UserId + path) })
+                                .then(loadStatus, () => Dashboard.alert('Could not change the time for ' + s.UserName));
+                        });
+                        buttons.append(b);
+                    };
+                    [10, 15, 30].forEach((m) => button('+' + m, 'POST', '/Extra?minutes=' + m));
+                    if (!s.Party) button('Party', 'POST', '/Party');
+                    if (s.Party || s.ExtraMinutes > 0) button('Undo extra', 'DELETE', '/Extra');
+                    node.append(buttons);
+                    return node;
+                }
+
+                function loadStatus() {
+                    return ApiClient.getJSON(ApiClient.getUrl('TimeIsUp/Status')).then((list) => {
+                        $('#TimeIsUpStatus').replaceChildren(...list.map(card));
+                        $('#TimeIsUpNoUsers').hidden = list.length > 0;
+                    });
+                }
+
+                function userRow(user, limit) {
+                    const row = el('div', 'tiu-user');
+                    row.dataset.userId = norm(user.Id);
+                    const container = el('div', 'checkboxContainer');
+                    container.innerHTML = '<label class="emby-checkbox-label"><input type="checkbox" is="emby-checkbox" /><span></span></label>';
+                    const box = container.querySelector('input');
+                    box.checked = !!limit;
+                    container.querySelector('span').textContent = user.Name;
+                    row.append(container);
+
+                    const grid = el('div', 'tiu-days');
+                    days.forEach(([index, name]) => {
+                        const cell = el('label', null, name);
+                        const input = el('input', 'emby-input');
+                        input.type = 'number';
+                        input.min = 0;
+                        input.max = 1440;
+                        input.dataset.day = index;
+                        input.value = limit ? limit.Minutes[index] : defaultMinutes;
+                        cell.append(input);
+                        grid.append(cell);
+                    });
+
+                    const buttons = el('div', 'tiu-buttons tiu-presets');
+                    presets.forEach(([label, change]) => {
+                        const b = el('button', 'raised emby-button', label);
+                        b.type = 'button';
+                        b.setAttribute('is', 'emby-button');
+                        b.addEventListener('click', () => grid.querySelectorAll('input').forEach((input) => {
+                            input.value = Math.min(1440, Math.max(0, change(parseInt(input.value, 10) || 0)));
+                        }));
+                        buttons.append(b);
+                    });
+
+                    const limits = el('div');
+                    limits.append(buttons, grid);
+                    limits.hidden = !limit;
+                    box.addEventListener('change', () => { limits.hidden = !box.checked; });
+                    row.append(limits);
+                    return row;
+                }
+
+                function showGrace() {
+                    $('#GraceMinutesContainer').hidden = $('#TimeUpBehavior').value !== 'FinishWithGrace';
+                }
+
+                if (!$('#ResetHour').options.length) {
+                    for (let h = 0; h < 24; h++) {
+                        const option = el('option', null, String(h).padStart(2, '0') + ':00');
+                        option.value = h;
+                        $('#ResetHour').append(option);
+                    }
+                }
+
+                $('#TimeUpBehavior').addEventListener('change', showGrace);
+
+                page.addEventListener('pageshow', () => {
+                    Dashboard.showLoadingMsg();
+                    Promise.all([ApiClient.getPluginConfiguration(pluginId), ApiClient.getUsers()]).then(([config, users]) => {
+                        $('#Enabled').checked = config.Enabled;
+                        $('#ShowTimeLeftOnStart').checked = config.ShowTimeLeftOnStart;
+                        $('#CapitalizeUserName').checked = config.CapitalizeUserName;
+                        $('#TimeUpBehavior').value = config.TimeUpBehavior;
+                        textFields.concat(numberFields).forEach((f) => { $('#' + f).value = config[f]; });
+                        showGrace();
+                        const limits = new Map(config.Users.map((u) => [norm(u.UserId), u]));
+                        $('#TimeIsUpUsers').replaceChildren(...users.map((u) => userRow(u, limits.get(norm(u.Id)))));
+                        return loadStatus();
+                    }).finally(() => Dashboard.hideLoadingMsg());
+                    clearInterval(refreshTimer);
+                    refreshTimer = setInterval(loadStatus, 10000);
+                });
+
+                page.addEventListener('pagehide', () => clearInterval(refreshTimer));
+
+                $('#TimeIsUpConfigForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(pluginId).then((config) => {
+                        config.Enabled = $('#Enabled').checked;
+                        config.ShowTimeLeftOnStart = $('#ShowTimeLeftOnStart').checked;
+                        config.CapitalizeUserName = $('#CapitalizeUserName').checked;
+                        config.TimeUpBehavior = $('#TimeUpBehavior').value;
+                        textFields.forEach((f) => { config[f] = $('#' + f).value; });
+                        numberFields.forEach((f) => { config[f] = parseInt($('#' + f).value, 10) || 0; });
+                        config.Users = [...page.querySelectorAll('.tiu-user')]
+                            .filter((row) => row.querySelector('input[type=checkbox]').checked)
+                            .map((row) => {
+                                const minutes = [0, 0, 0, 0, 0, 0, 0];
+                                row.querySelectorAll('input[data-day]').forEach((input) => {
+                                    minutes[input.dataset.day] = Math.max(0, parseInt(input.value, 10) || 0);
+                                });
+                                return { UserId: row.dataset.userId, Minutes: minutes };
+                            });
+                        return ApiClient.updatePluginConfiguration(pluginId, config);
+                    }).then((result) => {
+                        Dashboard.processPluginConfigurationUpdateResult(result);
+                        return loadStatus();
+                    });
+                    return false;
+                });
+            })();
+        </script>
+    </div>
+</body>
+</html>
