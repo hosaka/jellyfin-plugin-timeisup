@@ -1,6 +1,7 @@
 # Time Is Up
 
 [![AI:X EXECUTE](https://img.shields.io/badge/AI-EXECUTE-grey?style=flat&logoSize=auto&labelColor=13171f)](https://0rwx.com)
+
 A Jellyfin plugin for daily screen time limits per user.
 
 Built for Jellyfin 12.4 (.NET 10).
@@ -23,6 +24,16 @@ The settings page is in the dashboard under Plugins → Time Is Up, for administ
 
 ![The Time Is Up settings page](assets/settings.png)
 
+## Installation
+
+In Jellyfin, open Dashboard → Plugins → Manage Repositories and add this repository:
+
+```
+https://code.hosaka.cc/hosaka/jellyfin-plugin-timeisup/raw/branch/main/manifest.json
+```
+
+Then install Time Is Up from the plugin catalog and restart Jellyfin. New versions show up as plugin updates.
+
 ## Building
 
 Everything builds in containers, so only [podman](https://podman.io) and [just](https://just.systems) are needed:
@@ -35,6 +46,8 @@ just setup   # once per fresh .dev/: admin dev/dev, user kid without a password,
 just logs    # follow the dev server's log
 just down    # remove the dev server, its config stays in .dev/
 ```
+
+Release notes are kept with [changie](https://changie.dev) (`mise install` provides it). CI and releases are described in [.forgejo/README.md](.forgejo/README.md).
 
 
 ## AI Use
