@@ -1,0 +1,3 @@
+kind: Added
+body: When time runs out, playback stops right away or the current video finishes, optionally up to a grace limit. New playback is refused until the next day
+time: 2026-11-25T01:06:40.10123314+09:00

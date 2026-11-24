@@ -1,16 +1,15 @@
 ---
 name: "Time Is Up"
 guid: "e89fc9db-5c7a-4bae-8ada-194730c5e711"
-version: "0.1.0.0"
+version: "0.0.0.0"
 targetAbi: "12.4.0.0"
 framework: "net10.0"
 overview: "Daily screen time limits for Jellyfin users"
-description: >
-  Tracks how long each user watches per day and stops playback
-  once their daily limit is used up.
+description: >-
+  Limits how long each user can watch per day, with limits per weekday,
+  a warning before time runs out and extra time from the dashboard.
+  Only actual playing time counts.
 category: "General"
 owner: "hosaka"
 artifacts:
 - "Jellyfin.Plugin.TimeIsUp.dll"
-changelog: >
-  Initial scaffolding.

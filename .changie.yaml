@@ -1,0 +1,43 @@
+# Release notes are written as fragments with `changie new` and batched into
+# .changes/vX.Y.Z.md by release.yml. See .forgejo/README.md.
+changesDir: .changes
+unreleasedDir: unreleased
+headerPath: header.tpl.md
+changelogPath: CHANGELOG.md
+versionExt: md
+versionFormat: '## {{.Version}} - {{.Time.Format "2006-01-02"}}'
+kindFormat: '### {{.Kind}}'
+changeFormat: '- {{.Body}}'
+kinds:
+  - label: Added
+    auto: minor
+  - label: Changed
+    auto: minor
+  - label: Deprecated
+    auto: minor
+  - label: Removed
+    auto: minor
+  - label: Fixed
+    auto: patch
+  - label: Security
+    auto: patch
+newlines:
+  afterChangelogHeader: 0
+  beforeChangelogVersion: 1
+  endOfVersion: 1
+# Jellyfin plugin versions have four parts; the fourth is always 0.
+# Replacements are applied by `changie merge`, not `changie batch`.
+replacements:
+  - path: Directory.Build.props
+    find: '<Version>.*</Version>'
+    replace: '<Version>{{.VersionNoPrefix}}.0</Version>'
+  - path: Directory.Build.props
+    find: '<AssemblyVersion>.*</AssemblyVersion>'
+    replace: '<AssemblyVersion>{{.VersionNoPrefix}}.0</AssemblyVersion>'
+  - path: Directory.Build.props
+    find: '<FileVersion>.*</FileVersion>'
+    replace: '<FileVersion>{{.VersionNoPrefix}}.0</FileVersion>'
+  - path: build.yaml
+    find: '^version: ".*"'
+    replace: 'version: "{{.VersionNoPrefix}}.0"'
+envPrefix: CHANGIE_
