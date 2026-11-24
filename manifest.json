@@ -1,0 +1,20 @@
+[
+  {
+    "guid": "e89fc9db-5c7a-4bae-8ada-194730c5e711",
+    "name": "Time Is Up",
+    "description": "Limits how long each user can watch per day, with limits per weekday, a warning before time runs out and extra time from the dashboard. Only actual playing time counts.",
+    "overview": "Daily screen time limits for Jellyfin users",
+    "owner": "hosaka",
+    "category": "General",
+    "versions": [
+      {
+        "version": "0.1.0.0",
+        "changelog": "### Added\n- Daily screen time limits per user, set for each day of the week. Only playing video counts, not pauses or music\n- When time runs out, playback stops right away or the current video finishes, optionally up to a grace limit. New playback is refused until the next day\n- Messages on the playing device: a warning before time runs out, a heads-up when the current video is the last one, and the time left when playback starts\n- Extra time for today (+10, +15, +30 or no limit) and a status overview of every limited user on the settings page\n- Activity log entries when time runs out and when extra time is added or removed",
+        "targetAbi": "12.4.0.0",
+        "sourceUrl": "https://code.hosaka.cc/hosaka/jellyfin-plugin-timeisup/releases/download/v0.1.0/time-is-up_0.1.0.0.zip",
+        "checksum": "95d6f94d99e1e42f1ddb4248e6719101",
+        "timestamp": "2026-11-24T16:36:48Z"
+      }
+    ]
+  }
+]

@@ -1,7 +1,7 @@
 ---
 name: "Time Is Up"
 guid: "e89fc9db-5c7a-4bae-8ada-194730c5e711"
-version: "0.0.0.0"
+version: "0.1.0.0"
 targetAbi: "12.4.0.0"
 framework: "net10.0"
 overview: "Daily screen time limits for Jellyfin users"
