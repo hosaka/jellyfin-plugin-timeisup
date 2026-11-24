@@ -33,21 +33,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Fail before anything is pushed: the release is published only after
-      # the commit and tag are, so a missing token would leave a tag without
-      # a release and a manifest entry pointing at nothing.
-      - name: Check the release token
-        env:
-          TOKEN: ${{ secrets.FORGEJO_TOKEN }}
-        run: |
-          set -eu
-          if [ -z "$TOKEN" ]; then
-            echo "The FORGEJO_TOKEN secret is not set" >&2
-            exit 1
-          fi
-          curl -sS --fail-with-body -o /dev/null --header "Authorization: token $TOKEN" \
-            "${GITHUB_SERVER_URL}/api/v1/repos/${GITHUB_REPOSITORY}"
-
       - name: Install tools
         uses: https://github.com/jdx/mise-action@08ae2a091c038e1e05ec6f5115dc5c69d5a2a6b8 # v5.1.2
         env:

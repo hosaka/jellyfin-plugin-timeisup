@@ -19,14 +19,7 @@ Workflows run in Docker Hub's `node:24-bookworm` image. [mise](https://mise.jdx.
 
 `changie latest` and the version in `Directory.Build.props` must agree, or the job stops before writing anything.
 
-**Secrets:**
-
-| Secret | Token |
-|---|---|
-| `FORGEJO_TOKEN` | Forgejo access token with *repository: read and write*, used to publish the release |
-| `MISE_TOKEN` | GitHub token for mise's downloads, so they aren't rate limited (optional) |
-
-The release commit and tag are pushed with the workflow's own token.
+**Tokens:** the release commit, the tag and the release itself all use the workflow's automatic token (`FORGEJO_TOKEN`), which has write access to this repository. The only secret is optional: `MISE_TOKEN`, a GitHub token so mise's downloads aren't rate limited.
 
 ## Plugin repository
 
