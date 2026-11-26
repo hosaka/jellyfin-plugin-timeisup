@@ -59,3 +59,8 @@ Release notes are kept with [changie](https://changie.dev) (`mise install` provi
 ## Credits
 
 Based on the ideas and approach of [ScreenTime](https://github.com/atcen/jellyfin-plugin-screentime) by atcen (MIT). Scaffolded from [jellyfin-plugin-template](https://github.com/jellyfin/jellyfin-plugin-template).
+
+## Mirrors
+This repository is hosted on [Forgejo](https://code.hosaka.cc/hosaka/jellyfin-plugin-timeisup) which mirrors to the following git forges:
+- [<img src="https://raw.githubusercontent.com/humanetech-community/awesome-humane-tech/main/logo/github.svg?sanitize=true" width="16"/>](https://github.com/hosaka/jellyfin-plugin-timeisup) - https://github.com/hosaka/jellyfin-plugin-timeisup
+
